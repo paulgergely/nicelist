@@ -26,7 +26,7 @@ function withErrorHandling(fn) {
 }
 
 // Task loading
-export async function loadTasks() { 
+export async function loadTasks() {
     try {
         const now = Date.now();
         if (taskCache.size > 0 && (now - lastFetchTime) < CACHE_DURATION) {
