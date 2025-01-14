@@ -46,7 +46,14 @@ export async function createTask(text, parentId = null) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('User not authenticated');
 
-        const position = getNextPosition(parentId);
+        // Get the highest position for the parent
+        const tasksByParent = getTasksByParentFromCache();
+        const siblings = tasksByParent.get(parentId || 'root') || [];
+        const maxPosition = siblings.reduce((max, task) => Math.max(max, task.position || 0), 0);
+        
+        // New task gets position higher than the highest existing position
+        const position = maxPosition + 1;  // Just increment by 1 to add at the end
+        
         const { data: task, error } = await supabase
             .from('tasks')
             .insert([{ 

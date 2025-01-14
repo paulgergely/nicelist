@@ -9,13 +9,10 @@
 <body class="bg-gray-100 min-h-screen">
     <div id="errorMessage" class="fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded shadow hidden"></div>
 
-    <!-- Header with user menu -->
-    <div class="bg-white shadow">
+    <!-- Update header section -->
+    <div class="bg-transparent">
         <div class="max-w-7xl mx-auto px-4">
-            <div class="flex justify-between h-16">
-                <div class="flex-shrink-0 flex items-center">
-                    <h1 class="text-xl font-semibold">Task Manager</h1>
-                </div>
+            <div class="flex justify-end h-16">
                 <div class="flex items-center">
                     <div class="relative">
                         <button id="userMenuButton" class="flex items-center space-x-2 text-gray-700 hover:text-gray-900 focus:outline-none">
@@ -35,7 +32,7 @@
     </div>
 
     <!-- Auth Container -->
-    <div id="authContainer" class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div id="authContainer" class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 mt-16">
         <!-- Login Form -->
         <div id="loginForm" class="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow">
             <div>
@@ -106,11 +103,12 @@
     <!-- Main App Container -->
     <div id="appContainer" class="container mx-auto p-4 hidden">
         <!-- Main View -->
-        <div id="mainView" class="max-w-4xl mx-auto p-6">
+        <div id="mainView" class="max-w-4xl mx-auto p-6 mt-16">
             <div class="bg-white rounded-lg shadow p-6 space-y-4">
                 <div class="flex items-center space-x-3">
                     <input type="text" id="mainTaskInput" 
-                        class="w-full pl-4 pr-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        style="padding-left: 16px"
+                        class="w-full pr-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         placeholder="Add a new task...">
                 </div>
                 <ul id="mainTaskList" class="space-y-1">
@@ -120,7 +118,7 @@
         </div>
 
         <!-- Task View -->
-        <div id="taskView" class="max-w-4xl mx-auto p-6 hidden">
+        <div id="taskView" class="max-w-4xl mx-auto p-6 mt-16 hidden">
             <div class="space-y-4">
                 <nav id="breadcrumbs" class="text-sm">
                     <!-- Breadcrumbs will be inserted here -->
@@ -137,7 +135,8 @@
 
                     <div class="flex items-center space-x-3">
                         <input type="text" id="subtaskInput" 
-                            class="w-full pl-4 pr-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            style="padding-left: 32px"
+                            class="w-full pr-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             placeholder="Add a new subtask...">
                     </div>
                     <ul id="subtaskList" class="space-y-1">
@@ -148,7 +147,7 @@
         </div>
 
         <!-- Account View -->
-        <div id="accountView" class="max-w-4xl mx-auto p-6 hidden">
+        <div id="accountView" class="max-w-4xl mx-auto p-6 mt-16 hidden">
             <h2 class="text-2xl font-bold mb-6">Account Settings</h2>
             
             <!-- Profile Section -->

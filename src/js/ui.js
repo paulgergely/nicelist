@@ -14,12 +14,46 @@ import {
     loadTasks
 } from './tasks.js';
 
+document.addEventListener('keydown', (e) => {
+    // Check for Cmd+Backspace (Mac) or Ctrl+Backspace (Windows)
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Backspace') {
+        e.preventDefault(); // Prevent browser back
+        
+        // Only handle if we're in a task view
+        if (currentTaskId) {
+            const taskPath = getTaskPathFromCache(currentTaskId);
+            
+            // If we have a path and it's longer than 1 (not at root)
+            if (taskPath.length > 1) {
+                // Go to parent task
+                const parentTaskId = taskPath[taskPath.length - 2];
+                const parentTask = taskCache.get(parentTaskId);
+                if (parentTask) {
+                    openTaskView(parentTask);
+                }
+            } else {
+                // If at first level, go to root
+                navigateToRoot();
+            }
+        }
+    }
+});
+
 function initializeUI() {
-    console.log('Initializing UI');
+    console.log('Initializing UI - start');
+    
+    const mainView = document.getElementById('mainView');
+    const taskView = document.getElementById('taskView');
+    
+    if (mainView) mainView.replaceWith(mainView.cloneNode(true));
+    if (taskView) taskView.replaceWith(taskView.cloneNode(true));
+    
     initializeTaskInput();
     initializeUserMenu();
     initializeAccountView();
     updateUserDisplay();
+    
+    console.log('Initializing UI - complete');
 }
 
 function initializeTaskInput() {
@@ -28,16 +62,25 @@ function initializeTaskInput() {
     const mainInput = document.getElementById('mainTaskInput');
     const subtaskInput = document.getElementById('subtaskInput');
     
-    if (mainInput) {
-        mainInput.addEventListener('keydown', async (e) => {
-            if (e.key === 'Enter' && !e.repeat) {
+    // Remove any existing event listeners
+    mainInput?.replaceWith(mainInput?.cloneNode(true));
+    subtaskInput?.replaceWith(subtaskInput?.cloneNode(true));
+    
+    // Get fresh references after replacing
+    const newMainInput = document.getElementById('mainTaskInput');
+    const newSubtaskInput = document.getElementById('subtaskInput');
+    
+    if (newMainInput) {
+        newMainInput.addEventListener('keydown', async (e) => {
+            if (e.key === 'Enter') {
+                console.log('Main input Enter pressed');
                 e.preventDefault();
-                const text = mainInput.value.trim();
+                const text = newMainInput.value.trim();
                 if (!text) return;
                 
                 try {
                     await createTask(text, currentTaskId);
-                    mainInput.value = '';
+                    newMainInput.value = '';
                     await loadTasks();
                 } catch (error) {
                     console.error('Error creating task:', error);
@@ -47,16 +90,17 @@ function initializeTaskInput() {
         });
     }
 
-    if (subtaskInput) {
-        subtaskInput.addEventListener('keydown', async (e) => {
-            if (e.key === 'Enter' && !e.repeat) {
+    if (newSubtaskInput) {
+        newSubtaskInput.addEventListener('keydown', async (e) => {
+            if (e.key === 'Enter') {
+                console.log('Subtask input Enter pressed');
                 e.preventDefault();
-                const text = subtaskInput.value.trim();
+                const text = newSubtaskInput.value.trim();
                 if (!text) return;
                 
                 try {
                     await createTask(text, currentTaskId);
-                    subtaskInput.value = '';
+                    newSubtaskInput.value = '';
                     await loadTasks();
                 } catch (error) {
                     console.error('Error creating task:', error);
@@ -144,6 +188,7 @@ function renderTasks(taskCache) {
     
     // Show nested tasks in both main view and task detail view
     const rootTasks = tasksByParent.get(currentTaskId || 'root') || [];
+    // Sort by position in ascending order
     rootTasks.sort((a, b) => (a.position || 0) - (b.position || 0));
     
     rootTasks.forEach(task => {
@@ -160,6 +205,7 @@ function renderChildTasks(parentId, parentElement, depth, tasksByParent) {
     const childList = document.createElement('ul');
     childList.className = 'ml-6 mt-1 space-y-1';
     
+    // Sort children by position in ascending order
     children.sort((a, b) => (a.position || 0) - (b.position || 0));
     
     children.forEach(task => {
@@ -176,7 +222,7 @@ function createTaskElement(task, depth) {
     li.className = 'relative';
     
     const div = document.createElement('div');
-    div.className = 'flex items-center space-x-2 py-2 px-3 rounded-lg hover:bg-gray-50';
+    div.className = 'flex items-center space-x-2 py-2 px-3 rounded-lg transition-colors duration-75';
     
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
@@ -202,10 +248,12 @@ function createTaskElement(task, depth) {
     
     div.addEventListener('mouseenter', () => {
         deleteBtn.classList.remove('hidden');
+        div.classList.add('bg-gray-50');
     });
     
     div.addEventListener('mouseleave', () => {
         deleteBtn.classList.add('hidden');
+        div.classList.remove('bg-gray-50');
     });
     
     div.appendChild(checkbox);
@@ -393,6 +441,34 @@ function showAccountView() {
     document.getElementById('accountView')?.classList.remove('hidden');
     document.getElementById('userMenu')?.classList.add('hidden');
 }
+
+function navigateBack() {
+    if (!currentTaskId) return;
+    
+    const taskPath = getTaskPathFromCache(currentTaskId);
+    
+    // Get the parent task ID (one level up)
+    const parentTaskId = taskCache.get(currentTaskId)?.parent_id;
+    
+    if (parentTaskId) {
+        // If there's a parent, navigate to it
+        const parentTask = taskCache.get(parentTaskId);
+        if (parentTask) {
+            openTaskView(parentTask);
+        }
+    } else {
+        // If no parent (at root level), go to main view
+        navigateToRoot();
+    }
+}
+
+// Update the event listener to use the helper
+document.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Backspace') {
+        e.preventDefault();
+        navigateBack();
+    }
+});
 
 export {
     initializeUI,
