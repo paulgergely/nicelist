@@ -250,4 +250,67 @@ export async function logout() {
     } finally {
         hideLoading()
     }
-} 
+}
+
+// Add these event listeners with your other initialization code
+document.addEventListener('DOMContentLoaded', () => {
+    const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+    const backToLoginLink = document.getElementById('backToLoginLink');
+    const sendResetLink = document.getElementById('sendResetLink');
+    const loginForm = document.getElementById('loginForm');
+    const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+    
+    // Show forgot password form
+    forgotPasswordLink?.addEventListener('click', (e) => {
+        e.preventDefault();
+        loginForm.classList.add('hidden');
+        signupForm.classList.add('hidden');
+        forgotPasswordForm.classList.remove('hidden');
+        
+        // Pre-fill email if it exists
+        const loginEmail = document.getElementById('loginEmail').value;
+        if (loginEmail) {
+            document.getElementById('resetEmail').value = loginEmail;
+        }
+    });
+    
+    // Back to login
+    backToLoginLink?.addEventListener('click', (e) => {
+        e.preventDefault();
+        forgotPasswordForm.classList.add('hidden');
+        loginForm.classList.remove('hidden');
+    });
+    
+    // Send password reset link
+    sendResetLink?.addEventListener('click', async () => {
+        const email = document.getElementById('resetEmail').value;
+        
+        if (!email) {
+            showError('Please enter your email address');
+            return;
+        }
+        
+        try {
+            showLoading();
+            
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${window.location.origin}/reset-password`,
+            });
+            
+            if (error) throw error;
+            
+            // Show success message
+            showError('Password reset link sent! Please check your email.');
+            
+            // Return to login form
+            forgotPasswordForm.classList.add('hidden');
+            loginForm.classList.remove('hidden');
+            
+        } catch (error) {
+            console.error('Reset password error:', error);
+            showError(error.message);
+        } finally {
+            hideLoading();
+        }
+    });
+}); 
