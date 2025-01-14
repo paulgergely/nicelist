@@ -29,8 +29,9 @@ function initializeTaskInput() {
     const subtaskInput = document.getElementById('subtaskInput');
     
     if (mainInput) {
-        mainInput.addEventListener('keypress', async (e) => {
-            if (e.key === 'Enter') {
+        mainInput.addEventListener('keydown', async (e) => {
+            if (e.key === 'Enter' && !e.repeat) {
+                e.preventDefault();
                 const text = mainInput.value.trim();
                 if (!text) return;
                 
@@ -47,8 +48,9 @@ function initializeTaskInput() {
     }
 
     if (subtaskInput) {
-        subtaskInput.addEventListener('keypress', async (e) => {
-            if (e.key === 'Enter') {
+        subtaskInput.addEventListener('keydown', async (e) => {
+            if (e.key === 'Enter' && !e.repeat) {
+                e.preventDefault();
                 const text = subtaskInput.value.trim();
                 if (!text) return;
                 
