@@ -40,70 +40,49 @@ document.addEventListener('keydown', (e) => {
 });
 
 function initializeUI() {
-    console.log('Initializing UI - start');
-    
-    const mainView = document.getElementById('mainView');
-    const taskView = document.getElementById('taskView');
-    
-    if (mainView) mainView.replaceWith(mainView.cloneNode(true));
-    if (taskView) taskView.replaceWith(taskView.cloneNode(true));
-    
     initializeTaskInput();
     initializeUserMenu();
     initializeAccountView();
     updateUserDisplay();
-    
-    console.log('Initializing UI - complete');
 }
 
 function initializeTaskInput() {
-    console.log('Initializing task inputs');
-    
+    // Remove old event listeners by cloning the elements
     const mainInput = document.getElementById('mainTaskInput');
     const subtaskInput = document.getElementById('subtaskInput');
     
-    // Remove any existing event listeners
-    mainInput?.replaceWith(mainInput?.cloneNode(true));
-    subtaskInput?.replaceWith(subtaskInput?.cloneNode(true));
-    
-    // Get fresh references after replacing
-    const newMainInput = document.getElementById('mainTaskInput');
-    const newSubtaskInput = document.getElementById('subtaskInput');
-    
-    if (newMainInput) {
-        newMainInput.addEventListener('keydown', async (e) => {
+    if (mainInput) {
+        const newMainInput = mainInput.cloneNode(true);
+        mainInput.parentNode.replaceChild(newMainInput, mainInput);
+        
+        newMainInput.addEventListener('keyup', async (e) => {
             if (e.key === 'Enter') {
-                console.log('Main input Enter pressed');
-                e.preventDefault();
                 const text = newMainInput.value.trim();
                 if (!text) return;
                 
                 try {
-                    await createTask(text, currentTaskId);
+                    await createTask(text);
                     newMainInput.value = '';
-                    await loadTasks();
                 } catch (error) {
-                    console.error('Error creating task:', error);
                     showError(error.message);
                 }
             }
         });
     }
 
-    if (newSubtaskInput) {
-        newSubtaskInput.addEventListener('keydown', async (e) => {
+    if (subtaskInput) {
+        const newSubtaskInput = subtaskInput.cloneNode(true);
+        subtaskInput.parentNode.replaceChild(newSubtaskInput, subtaskInput);
+        
+        newSubtaskInput.addEventListener('keyup', async (e) => {
             if (e.key === 'Enter') {
-                console.log('Subtask input Enter pressed');
-                e.preventDefault();
                 const text = newSubtaskInput.value.trim();
                 if (!text) return;
                 
                 try {
                     await createTask(text, currentTaskId);
                     newSubtaskInput.value = '';
-                    await loadTasks();
                 } catch (error) {
-                    console.error('Error creating task:', error);
                     showError(error.message);
                 }
             }
@@ -114,42 +93,157 @@ function initializeTaskInput() {
 function initializeUserMenu() {
     const userMenuButton = document.getElementById('userMenuButton');
     const userMenu = document.getElementById('userMenu');
+    const accountLink = document.getElementById('accountLink');
     const logoutLink = document.getElementById('logoutLink');
     
-    if (userMenuButton && userMenu) {
-        userMenuButton.onclick = (e) => {
-            e.stopPropagation();
+    if (userMenuButton) {
+        userMenuButton.onclick = () => {
             userMenu.classList.toggle('hidden');
         };
-        
-        document.addEventListener('click', (e) => {
-            if (!userMenuButton.contains(e.target) && !userMenu.contains(e.target)) {
-                userMenu.classList.add('hidden');
-            }
-        });
     }
     
-    logoutLink?.addEventListener('click', async (e) => {
-        e.preventDefault();
-        try {
+    if (accountLink) {
+        accountLink.onclick = (e) => {
+            e.preventDefault();
+            document.getElementById('mainView')?.classList.add('hidden');
+            document.getElementById('taskView')?.classList.add('hidden');
+            document.getElementById('accountView')?.classList.remove('hidden');
+            userMenu.classList.add('hidden');
+        };
+    }
+    
+    if (logoutLink) {
+        logoutLink.onclick = async (e) => {
+            e.preventDefault();
             const { error } = await supabase.auth.signOut();
-            if (error) throw error;
-            window.location.reload();
-        } catch (error) {
-            showError('Error signing out');
-        }
-    });
+            if (error) showError(error.message);
+        };
+    }
 }
 
-function initializeAccountView() {
-    const accountLink = document.getElementById('accountLink');
-    accountLink?.addEventListener('click', (e) => {
-        e.preventDefault();
-        showAccountView();
+async function initializeAccountView() {
+    const changeEmailButton = document.getElementById('changeEmailButton');
+    const emailChangeModal = document.getElementById('emailChangeModal');
+    const cancelEmailChange = document.getElementById('cancelEmailChange');
+    const confirmEmailChange = document.getElementById('confirmEmailChange');
+    const newEmailInput = document.getElementById('newEmailInput');
+    const accountEmail = document.getElementById('accountEmail');
+    const deleteAccountButton = document.getElementById('deleteAccountButton');
+    const deleteAccountModal = document.getElementById('deleteAccountModal');
+    const cancelDeleteAccount = document.getElementById('cancelDeleteAccount');
+    const confirmDeleteAccount = document.getElementById('confirmDeleteAccount');
+    const backToTasks = document.getElementById('backToTasks');
+    
+    // Display current email
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user && accountEmail) {
+        accountEmail.textContent = user.email;
+    }
+    
+    // Load task metrics
+    const { data: tasks, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('user_id', user.id);
+        
+    if (!error && tasks) {
+        const openTasks = tasks.filter(t => !t.completed).length;
+        const completedTasks = tasks.filter(t => t.completed).length;
+        const totalTasks = tasks.length;
+        
+        document.getElementById('openTasksCount').textContent = openTasks;
+        document.getElementById('completedTasksCount').textContent = completedTasks;
+        document.getElementById('totalTasksCount').textContent = totalTasks;
+    }
+    
+    // Back to tasks link
+    if (backToTasks) {
+        backToTasks.onclick = (e) => {
+            e.preventDefault();
+            document.getElementById('accountView').classList.add('hidden');
+            document.getElementById('mainView').classList.remove('hidden');
+        };
+    }
+    
+    // Email change handlers
+    if (changeEmailButton) {
+        changeEmailButton.onclick = () => {
+            emailChangeModal.classList.remove('hidden');
+            newEmailInput.value = '';
+            newEmailInput.focus();
+        };
+    }
+    
+    if (cancelEmailChange) {
+        cancelEmailChange.onclick = () => {
+            emailChangeModal.classList.add('hidden');
+        };
+    }
+    
+    if (confirmEmailChange) {
+        confirmEmailChange.onclick = async () => {
+            const newEmail = newEmailInput.value.trim();
+            if (!newEmail) return;
+            
+            try {
+                const { error } = await supabase.auth.updateUser({ email: newEmail });
+                if (error) throw error;
+                
+                emailChangeModal.classList.add('hidden');
+                showMessage('Check your email to confirm the change');
+            } catch (error) {
+                showError(error.message);
+            }
+        };
+    }
+    
+    // Delete account handlers
+    if (deleteAccountButton) {
+        deleteAccountButton.onclick = () => {
+            deleteAccountModal.classList.remove('hidden');
+        };
+    }
+    
+    if (cancelDeleteAccount) {
+        cancelDeleteAccount.onclick = () => {
+            deleteAccountModal.classList.add('hidden');
+        };
+    }
+    
+    if (confirmDeleteAccount) {
+        confirmDeleteAccount.onclick = async () => {
+            try {
+                // Delete all user's tasks
+                const { error: tasksError } = await supabase
+                    .from('tasks')
+                    .delete()
+                    .eq('user_id', user.id);
+                if (tasksError) throw tasksError;
+                
+                // Delete user account
+                const { error: userError } = await supabase.auth.admin.deleteUser(user.id);
+                if (userError) throw userError;
+                
+                // Sign out
+                await supabase.auth.signOut();
+            } catch (error) {
+                showError(error.message);
+            }
+        };
+    }
+    
+    // Close modals if clicking outside
+    emailChangeModal?.addEventListener('click', (e) => {
+        if (e.target === emailChangeModal) {
+            emailChangeModal.classList.add('hidden');
+        }
     });
     
-    initializeProfileSettings();
-    initializePreferences();
+    deleteAccountModal?.addEventListener('click', (e) => {
+        if (e.target === deleteAccountModal) {
+            deleteAccountModal.classList.add('hidden');
+        }
+    });
 }
 
 async function updateUserDisplay() {
@@ -171,24 +265,16 @@ async function updateUserDisplay() {
 }
 
 function renderTasks(taskCache) {
-    console.log('Rendering tasks:', taskCache);
-    
-    // Get the appropriate task list based on current view
     const taskList = currentTaskId 
         ? document.getElementById('subtaskList')
         : document.getElementById('mainTaskList');
     
-    if (!taskList) {
-        console.error('Task list element not found');
-        return;
-    }
+    if (!taskList) return;
     
     taskList.innerHTML = '';
     const tasksByParent = getTasksByParentFromCache();
     
-    // Show nested tasks in both main view and task detail view
     const rootTasks = tasksByParent.get(currentTaskId || 'root') || [];
-    // Sort by position in ascending order
     rootTasks.sort((a, b) => (a.position || 0) - (b.position || 0));
     
     rootTasks.forEach(task => {

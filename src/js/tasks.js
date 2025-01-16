@@ -20,8 +20,6 @@ export async function loadTasks() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('User not authenticated');
 
-        console.log('Loading tasks for user:', user.id); // Debug log
-
         const { data: tasks, error } = await supabase
             .from('tasks')
             .select('*')
@@ -30,13 +28,10 @@ export async function loadTasks() {
             
         if (error) throw error;
 
-        console.log('Loaded tasks:', tasks); // Debug log
-
         taskCache.clear();
         tasks.forEach(task => taskCache.set(task.id, task));
         renderTasks(taskCache);
     } catch (error) {
-        console.error('Error loading tasks:', error);
         showError(error.message);
     }
 }
@@ -46,20 +41,16 @@ export async function createTask(text, parentId = null) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('User not authenticated');
 
-        // Get the highest position for the parent
         const tasksByParent = getTasksByParentFromCache();
         const siblings = tasksByParent.get(parentId || 'root') || [];
         const maxPosition = siblings.reduce((max, task) => Math.max(max, task.position || 0), 0);
-        
-        // New task gets position higher than the highest existing position
-        const position = maxPosition + 1;  // Just increment by 1 to add at the end
         
         const { data: task, error } = await supabase
             .from('tasks')
             .insert([{ 
                 text,
                 parent_id: parentId,
-                position,
+                position: maxPosition + 1,
                 completed: false,
                 user_id: user.id
             }])
